@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% block title %}Edit Profile — EventEase{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:800px;padding-top:40px;padding-bottom:60px">
+    <h1 class="mb-4">Edit Profile</h1>
+    
+    <div class="profile-layout">
+        <!-- Sidebar -->
+        <div class="profile-sidebar">
+            <div class="avatar-upload-container">
+                <div class="avatar-preview" id="avatar-preview">
+                    {% if user.avatar %}
+                    <img src="{{ url_for('static', filename=user.avatar) }}" alt="Avatar">
+                    {% else %}
+                    <div class="avatar-placeholder">{{ user.name[0]|upper }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="text-center mt-3">
+                <h3>{{ user.name }}</h3>
+                <p class="text-muted text-sm">{{ user.role|title }}</p>
+                {% if user.role == 'creator' %}
+                <a href="{{ url_for('profile.public_creator', creator_id=user.id) }}" class="btn btn-outline btn-sm mt-2" target="_blank">View Public Profile</a>
+                {% endif %}
+            </div>
+            
+            {% if user.role == 'admin' %}
+            <hr style="margin:20px 0;border-color:var(--border)">
+            <div class="text-sm text-muted">
+                <p><strong>Member Since:</strong><br>{{ user.created_at.strftime('%B %d, %Y') }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Main Form Area -->
+        <div class="profile-main">
+            <!-- Profile Info Form -->
+            <form method="POST" enctype="multipart/form-data" class="card mb-4" id="profile-form">
+                <input type="hidden" name="action" value="update_profile">
+                <h3 class="mb-3">Personal Information</h3>
+                
+                <div class="form-group">
+                    <label class="form-label" for="avatar-input">Profile Picture (JPG/PNG)</label>
+                    <input type="file" id="avatar-input" name="avatar" class="form-input" accept="image/jpeg,image/png,image/webp">
+                </div>
+
+                <div class="grid grid-2 gap-2">
+                    <div class="form-group">
+                        <label class="form-label" for="name">Full Name *</label>
+                        <input class="form-input" type="text" id="name" name="name" value="{{ user.name }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="email">Email Address</label>
+                        <input class="form-input" type="email" id="email" value="{{ user.email }}" disabled>
+                        <small class="text-muted">Email cannot be changed.</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="phone">Phone Number</label>
+                    <input class="form-input" type="tel" id="phone" name="phone" value="{{ user.phone or '' }}" placeholder="10-digit number" pattern="\d{10}" title="Phone number must be exactly 10 digits" minlength="10" maxlength="10">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="bio">Bio <span class="char-count" id="bio-count">0/200</span></label>
+                    <textarea class="form-input form-textarea" id="bio" name="bio" rows="3" maxlength="200" placeholder="Tell us a bit about yourself...">{{ user.bio or '' }}</textarea>
+                </div>
+
+                {% if user.role == 'creator' %}
+                <hr style="margin:24px 0;border-color:var(--border)">
+                <h3 class="mb-3">Creator Profile</h3>
+                <div class="grid grid-2 gap-2">
+                    <div class="form-group">
+                        <label class="form-label" for="organization_name">Organization / Brand Name</label>
+                        <input class="form-input" type="text" id="organization_name" name="organization_name" value="{{ user.organization_name or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="website_url">Website / Portfolio URL</label>
+                        <input class="form-input" type="url" id="website_url" name="website_url" value="{{ user.website_url or '' }}" placeholder="https://">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Event Categories I Specialize In</label>
+                    <div class="grid grid-2 gap-1 mt-2">
+                        {% set prefs = user.preferences.split(',') if user.preferences else [] %}
+                        {% for type_val in ['music_concert', 'tech_conference', 'art_exhibition', 'food_festival', 'business_seminar', 'sports_match', 'comedy_show', 'theater_play', 'networking_meetup', 'workshop'] %}
+                        <label class="filter-check">
+                            <input type="checkbox" name="preferences" value="{{ type_val }}" {% if type_val in prefs %}checked{% endif %}>
+                            {{ type_val|replace('_', ' ')|title }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if user.role == 'user' %}
+                <hr style="margin:24px 0;border-color:var(--border)">
+                <h3 class="mb-3">Preferences</h3>
+                <div class="form-group">
+                    <label class="form-label" for="city">City</label>
+                    <input class="form-input" type="text" id="city" name="city" value="{{ user.city or '' }}" placeholder="Your home city">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Favorite Event Types</label>
+                    <div class="grid grid-2 gap-1 mt-2">
+                        {% set prefs = user.preferences.split(',') if user.preferences else [] %}
+                        {% for type_val in ['music_concert', 'tech_conference', 'art_exhibition', 'food_festival', 'business_seminar', 'sports_match', 'comedy_show', 'theater_play', 'networking_meetup', 'workshop'] %}
+                        <label class="filter-check">
+                            <input type="checkbox" name="preferences" value="{{ type_val }}" {% if type_val in prefs %}checked{% endif %}>
+                            {{ type_val|replace('_', ' ')|title }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary mt-3 btn-submit-loading">💾 Save Profile</button>
+            </form>
+
+            <!-- Password Change Form -->
+            <form method="POST" class="card mb-4" id="password-form">
+                <input type="hidden" name="action" value="change_password">
+                <h3 class="mb-3">Change Password</h3>
+                <div class="form-group">
+                    <label class="form-label" for="current_password">Current Password *</label>
+                    <input class="form-input" type="password" id="current_password" name="current_password" required>
+                </div>
+                <div class="grid grid-2 gap-2">
+                    <div class="form-group">
+                        <label class="form-label" for="new_password">New Password *</label>
+                        <input class="form-input" type="password" id="new_password" name="new_password" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="confirm_password">Confirm New Password *</label>
+                        <input class="form-input" type="password" id="confirm_password" name="confirm_password" required minlength="6">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-outline mt-2 btn-submit-loading">🔒 Update Password</button>
+            </form>
+
+            <!-- Danger Zone -->
+            <div class="card border-danger">
+                <h3 class="mb-2 text-danger">Danger Zone</h3>
+                <p class="text-sm mb-3">Deleting your account is permanent and cannot be undone. All your active registrations or events will be cancelled.</p>
+                <form method="POST" onsubmit="return confirm('Are you absolutely sure you want to delete your account? This action cannot be undone.');">
+                    <input type="hidden" name="action" value="delete_account">
+                    <button type="submit" class="btn btn-danger">🗑️ Delete My Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Avatar Preview
+    const avatarInput = document.getElementById('avatar-input');
+    const avatarPreview = document.getElementById('avatar-preview');
+    if (avatarInput) {
+        avatarInput.addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Avatar">`;
+                }
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    }
+
+    // Bio Character Count
+    const bioInput = document.getElementById('bio');
+    const bioCount = document.getElementById('bio-count');
+    if (bioInput && bioCount) {
+        const updateCount = () => {
+            bioCount.textContent = `${bioInput.value.length}/200`;
+        };
+        bioInput.addEventListener('input', updateCount);
+        updateCount();
+    }
+    
+    // Add loading state to forms
+    document.querySelectorAll('.btn-submit-loading').forEach(btn => {
+        btn.closest('form').addEventListener('submit', () => {
+            btn.innerHTML = '<span class="spinner"></span> Saving...';
+            btn.disabled = true;
+        });
+    });
+</script>
+{% endblock %}

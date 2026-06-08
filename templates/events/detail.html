@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% block title %}{{ event.title }} — EventEase{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/events.css') }}">{% endblock %}
+
+{% block content %}
+<!-- Hero Banner -->
+{% if event.banner %}
+<div class="detail-hero">
+    <img src="{{ url_for('static', filename=event.banner) }}" alt="{{ event.title }}">
+    <div class="detail-hero-overlay">
+        <div class="detail-hero-content">
+            <span class="type-badge type-{{ event.type }}">{{ type_emoji }} {{ type_label }}</span>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+                <h1>{{ event.title }}</h1>
+                {% if current_user_id %}
+                <button class="btn btn-icon bookmark-btn" data-event-id="{{ event.id }}" style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; color: {% if is_saved %}var(--primary){% else %}white{% endif %}; border: none; cursor: pointer; transition: 0.2s;">
+                    <i class="{% if is_saved %}fas{% else %}far{% endif %} fa-bookmark" style="font-size: 1.2rem;"></i>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="detail-hero-fallback">
+    <div>
+        <span class="type-badge type-{{ event.type }}" style="margin-bottom:12px">{{ type_emoji }} {{ type_label }}</span>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+            <h1>{{ event.title }}</h1>
+            {% if current_user_id %}
+            <button class="btn btn-icon bookmark-btn" data-event-id="{{ event.id }}" style="background: rgba(255,255,255,0.05); border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; color: {% if is_saved %}var(--primary){% else %}var(--text-light){% endif %}; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: 0.2s;">
+                <i class="{% if is_saved %}fas{% else %}far{% endif %} fa-bookmark" style="font-size: 1.2rem;"></i>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="detail-layout">
+    <!-- Main Content -->
+    <div class="detail-content">
+        <!-- Info Bar -->
+        <div class="detail-info-bar">
+            <div class="detail-info-item">
+                <strong>📅</strong>
+                <span>{{ event.date_start.strftime('%b %d, %Y • %I:%M %p') if event.date_start else 'TBD' }}</span>
+            </div>
+            {% if event.date_end %}
+            <div class="detail-info-item">
+                <strong>🏁</strong>
+                <span>Ends {{ event.date_end.strftime('%b %d, %Y • %I:%M %p') }}</span>
+            </div>
+            {% endif %}
+            <div class="detail-info-item">
+                <strong>📍</strong>
+                <span>{{ event.venue or 'Online' }}{% if event.city %}, {{ event.city }}{% endif %}</span>
+            </div>
+            <div class="detail-info-item">
+                <strong>👥</strong>
+                <span>{{ event.capacity - event.registered }} spots left of {{ event.capacity }}</span>
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div class="detail-section">
+            <h2>About This Event</h2>
+            <div class="detail-description">{{ event.description or 'No description provided.' }}</div>
+        </div>
+
+        <!-- Type-Specific Details -->
+        {% if event.details %}
+        <div class="detail-section">
+            <h2>{{ type_label }} Details</h2>
+            <div class="detail-fields">
+                {% for key, val in event.details.items() %}
+                <div class="detail-field">
+                    <div class="detail-field-key">{{ key|replace('_',' ')|title }}</div>
+                    <div class="detail-field-val">{{ val }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Organizer -->
+        <div class="detail-section">
+            <h2>Organizer</h2>
+            <div class="organizer-card" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div class="organizer-avatar">{{ event.creator_name[0]|upper }}</div>
+                    <div>
+                        <strong>{{ event.creator_name }}</strong>
+                        <div class="text-muted" style="font-size:.85rem">Event Creator</div>
+                    </div>
+                </div>
+                <a href="{{ url_for('profile.public_creator', creator_id=event.creator_id) }}" class="btn btn-outline btn-sm">View Profile</a>
+            </div>
+        </div>
+
+        <!-- Reviews -->
+        {% if reviews or (event.date_end and event.date_end < now) %}
+        <div class="detail-section">
+            <h2>Reviews <span style="font-size: 1rem; color: #fbbf24;">★ {{ avg_rating }} ({{ reviews|length }})</span></h2>
+            {% if reviews %}
+            <div class="reviews-list" style="display: flex; flex-direction: column; gap: 1rem;">
+                {% for r in reviews %}
+                <div class="review-card glass-panel" style="padding: 1rem; border-radius: 12px; background: rgba(255,255,255,0.02);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        {% if r.avatar %}
+                        <img src="{{ r.avatar }}" style="width: 30px; height: 30px; border-radius: 50%; object-fit: cover;" alt="User">
+                        {% else %}
+                        <div style="width: 30px; height: 30px; border-radius: 50%; background: var(--surface); display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.1);">{{ r.name[0]|upper }}</div>
+                        {% endif %}
+                        <strong>{{ r.name }}</strong>
+                        <span style="color: #fbbf24; font-size: 0.9rem;">
+                            {% for _ in range(r.rating) %}★{% endfor %}{% for _ in range(5 - r.rating) %}☆{% endfor %}
+                        </span>
+                        <span class="text-muted" style="font-size: 0.75rem; margin-left: auto;">{{ r.created_at.strftime('%b %d, %Y') }}</span>
+                    </div>
+                    <p style="margin: 0; color: var(--text-light); font-size: 0.95rem;">{{ r.review_text }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">No reviews yet.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Similar Events -->
+        {% if similar %}
+        <div class="detail-section">
+            <h2>Similar Events</h2>
+            <div class="grid grid-3 gap-2">
+                {% for s in similar %}
+                <a href="{{ url_for('events.detail', event_id=s.id) }}" class="event-card" style="text-decoration:none;color:inherit">
+                    <div class="event-card-banner">
+                        {% if s.banner %}<img src="{{ url_for('static', filename=s.banner) }}" alt="{{ s.title }}">{% endif %}
+                    </div>
+                    <div class="event-card-body">
+                        <span class="type-badge type-{{ s.type }}">{{ s.type|replace('_',' ')|title }}</span>
+                        <h3>{{ s.title }}</h3>
+                        <div class="event-card-meta">
+                            <span>📅 {{ s.date_start.strftime('%b %d, %Y') if s.date_start else 'TBD' }}</span>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar Action Box -->
+    <div class="detail-sidebar">
+        <div class="action-box">
+            {% if event.price == 0 %}
+            <span class="event-price free" style="font-size:1.8rem">FREE</span>
+            {% else %}
+            <span class="event-price" style="font-size:1.8rem">₹{{ "%.0f"|format(event.price) }}</span>
+            {% endif %}
+
+            {% set spots = event.capacity - event.registered %}
+            <div class="capacity-bar mt-2"><div class="capacity-bar-fill" style="width:{{ (event.registered/event.capacity*100) if event.capacity > 0 else 0 }}%"></div></div>
+            <p class="action-spots">{{ spots }} of {{ event.capacity }} spots remaining</p>
+
+            {% if spots > 0 and event.status == 'published' %}
+            <a href="{{ url_for('tickets.register', event_id=event.id) }}" class="btn btn-primary btn-block btn-lg">🎫 Register Now</a>
+            {% elif spots <= 0 %}
+            <button class="btn btn-ghost btn-block" disabled>Sold Out</button>
+            {% else %}
+            <button class="btn btn-ghost btn-block" disabled>Registration Closed</button>
+            {% endif %}
+
+            <div class="share-btns">
+                <button class="share-btn share-copy" type="button">📋 Copy Link</button>
+                <a class="share-btn" href="https://wa.me/?text={{ event.title }} — {{ request.url }}" target="_blank">💬 WhatsApp</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/events.js') }}"></script>
+{% endblock %}

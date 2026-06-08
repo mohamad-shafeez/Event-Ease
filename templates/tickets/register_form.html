@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% block title %}Register for {{ event.title }} — EventEase{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/tickets.css') }}">{% endblock %}
+
+{% block content %}
+<div class="register-layout">
+    <!-- Sidebar Summary -->
+    <aside class="register-summary">
+        <div class="summary-card">
+            <img class="summary-banner" src="{% if event.banner %}{{ url_for('static', filename=event.banner) }}{% else %}https://via.placeholder.com/400x200{% endif %}" alt="{{ event.title }}">
+            <div class="summary-body">
+                <span class="type-badge type-{{ event.type }} mb-1" style="display:inline-block">{{ event.type|replace('_',' ')|title }}</span>
+                <h3>{{ event.title }}</h3>
+                <div class="summary-detail">📅 {{ event.date_start.strftime('%b %d, %Y • %I:%M %p') }}</div>
+                <div class="summary-detail">📍 {{ event.venue or 'Online' }}</div>
+                
+                {% set spots = event.capacity - event.registered %}
+                {% if event.capacity > 0 %}
+                <div class="summary-detail">👥 {{ spots|default(event.capacity, true) }} spots remaining</div>
+                {% endif %}
+                
+                <div class="price-total mt-3" style="margin-top:20px">
+                    <span>Total Amount</span>
+                    <strong id="live-total" data-price="{{ event.price }}">₹{{ "%.0f"|format(event.price) }}</strong>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Registration Form -->
+    <main class="register-form-area">
+        <h2 class="mb-3">Complete Registration</h2>
+        <form method="POST" action="{{ url_for('tickets.register', event_id=event.id) }}">
+            
+            <h3 class="register-section-title">Standard Information</h3>
+            <div class="grid grid-2 gap-2">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input class="form-input" type="text" value="{{ session.user_name }}" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input class="form-input" type="email" value="{{ session.user_email }}" disabled>
+                </div>
+            </div>
+            <div class="grid grid-2 gap-2">
+                <div class="form-group">
+                    <label class="form-label" for="phone">Phone Number *</label>
+                    <input class="form-input" type="tel" id="phone" name="phone" required placeholder="Enter 10-digit number" pattern="\d{10}" title="Phone number must be exactly 10 digits" minlength="10" maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="qty">Number of Tickets *</label>
+                    <input class="form-input" type="number" id="qty" name="qty" min="1" max="5" value="1" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="special_req">Special Requirements / Accessibility</label>
+                <textarea class="form-input" id="special_req" name="special_requirements" rows="2" placeholder="Let us know if you need any accommodations"></textarea>
+            </div>
+
+            <!-- Dynamic Event-Type Specific Fields -->
+            <h3 class="register-section-title mt-4">Event Specific Details</h3>
+            <div class="grid grid-2 gap-2">
+            
+            {% if event.type == 'concert' %}
+                <div class="form-group">
+                    <label class="form-label">Seat Preference</label>
+                    <select class="form-input" name="ans_seat_preference">
+                        <option value="General">General Admission</option>
+                        <option value="Allocated">Allocated</option>
+                        <option value="VIP">VIP</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">T-shirt Size</label>
+                    <select class="form-input" name="ans_tshirt_size">
+                        <option value="S">Small</option><option value="M">Medium</option>
+                        <option value="L">Large</option><option value="XL">XL</option>
+                    </select>
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                    <label class="filter-check"><input type="checkbox" name="ans_age_confirmed" value="Yes" required> I confirm I am 18+ years old.</label>
+                </div>
+
+            {% elif event.type == 'tech_conference' %}
+                <div class="form-group">
+                    <label class="form-label">Job Title *</label>
+                    <input class="form-input" type="text" name="ans_job_title" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Company Name *</label>
+                    <input class="form-input" type="text" name="ans_company" required>
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                    <label class="form-label">Which sessions will you attend?</label>
+                    <input class="form-input" type="text" name="ans_sessions" placeholder="e.g. AI, Cloud, Web Dev">
+                </div>
+
+            {% elif event.type == 'workshop' %}
+                <div class="form-group">
+                    <label class="form-label">Current Skill Level</label>
+                    <select class="form-input" name="ans_skill_level">
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Do you have a laptop?</label>
+                    <select class="form-input" name="ans_has_laptop"><option value="Yes">Yes</option><option value="No">No</option></select>
+                </div>
+
+            {% elif event.type == 'sports' %}
+                <div class="form-group">
+                    <label class="form-label">Team Name (if applicable)</label>
+                    <input class="form-input" type="text" name="ans_team_name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Your Position / Role</label>
+                    <input class="form-input" type="text" name="ans_position">
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                    <label class="form-label">Emergency Contact Number *</label>
+                    <input class="form-input" type="tel" name="ans_emergency_contact" required pattern="\d{10}" title="Emergency contact must be exactly 10 digits" minlength="10" maxlength="10">
+                </div>
+
+            {% elif event.type == 'wedding' %}
+                <div class="form-group">
+                    <label class="form-label">Relation to Host</label>
+                    <input class="form-input" type="text" name="ans_relation">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Meal Preference</label>
+                    <select class="form-input" name="ans_meal">
+                        <option value="Vegetarian">Vegetarian</option><option value="Non-Vegetarian">Non-Vegetarian</option><option value="Both">Both</option>
+                    </select>
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                    <label class="form-label">Plus-One Name (optional)</label>
+                    <input class="form-input" type="text" name="ans_plus_one">
+                </div>
+
+            {% elif event.type == 'exhibition' %}
+                <div class="form-group">
+                    <label class="form-label">Organization Name</label>
+                    <input class="form-input" type="text" name="ans_organization" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Designation</label>
+                    <input class="form-input" type="text" name="ans_designation">
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                    <label class="form-label">Name to print on Badge *</label>
+                    <input class="form-input" type="text" name="ans_badge_name" required>
+                </div>
+
+            {% elif event.type == 'webinar' %}
+                <div class="form-group">
+                    <label class="form-label">Time Zone</label>
+                    <input class="form-input" type="text" name="ans_timezone" placeholder="e.g. IST, EST" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Platform Preference</label>
+                    <select class="form-input" name="ans_platform"><option value="Zoom">Zoom</option><option value="Meet">Google Meet</option></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Want a certificate?</label>
+                    <select class="form-input" name="ans_want_cert"><option value="Yes">Yes</option><option value="No">No</option></select>
+                </div>
+
+            {% elif event.type == 'food_festival' %}
+                <div class="form-group">
+                    <label class="form-label">Dietary Type</label>
+                    <select class="form-input" name="ans_dietary"><option value="Veg">Vegetarian</option><option value="Vegan">Vegan</option><option value="Non-Veg">Non-Vegetarian</option><option value="Any">No Restrictions</option></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Any Allergies?</label>
+                    <input class="form-input" type="text" name="ans_allergies" placeholder="e.g. Peanuts, Gluten">
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                    <label class="form-label">Preferred Session Slot</label>
+                    <select class="form-input" name="ans_session_slot"><option value="Morning">Morning</option><option value="Afternoon">Afternoon</option><option value="Evening">Evening</option></select>
+                </div>
+
+            {% elif event.type == 'charity' %}
+                <div class="form-group" style="grid-column:1/-1">
+                    <label class="form-label">What motivates you to attend?</label>
+                    <textarea class="form-input" name="ans_motivation" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Interested in volunteering?</label>
+                    <select class="form-input" name="ans_volunteer"><option value="Yes">Yes</option><option value="No">No</option></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Referral Name</label>
+                    <input class="form-input" type="text" name="ans_referral">
+                </div>
+
+            {% elif event.type == 'comedy' %}
+                <div class="form-group">
+                    <label class="form-label">Seat Zone Preference</label>
+                    <select class="form-input" name="ans_seat_zone"><option value="Front">Front Row</option><option value="Middle">Middle</option><option value="Back">Back / Balcony</option></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Group Size</label>
+                    <input class="form-input" type="number" name="ans_group_size" min="1" value="1">
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                    <label class="form-label">Age Group</label>
+                    <select class="form-input" name="ans_age_group"><option value="18-25">18-25</option><option value="26-35">26-35</option><option value="36+">36+</option></select>
+                </div>
+            {% endif %}
+
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary btn-block btn-lg">Proceed to Payment →</button>
+            </div>
+        </form>
+    </main>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/tickets.js') }}"></script>{% endblock %}

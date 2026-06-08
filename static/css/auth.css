@@ -1,0 +1,77 @@
+/* ============================================
+   EventEase — Auth Page Styles
+   ============================================ */
+.auth-page{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;
+    padding:100px 24px 60px;position:relative;overflow:hidden;
+}
+.auth-bg{position:fixed;inset:0;z-index:-1;background:var(--bg);overflow:hidden}
+.auth-bg::before,.auth-bg::after{
+    content:'';position:absolute;border-radius:50%;filter:blur(80px);opacity:.45;
+    animation:blobFloat 12s ease-in-out infinite alternate;
+}
+.auth-bg::before{width:500px;height:500px;background:var(--primary);top:-120px;right:-80px}
+.auth-bg::after{width:400px;height:400px;background:var(--accent);bottom:-100px;left:-60px;animation-delay:-6s}
+.auth-blob-3{
+    position:fixed;width:300px;height:300px;border-radius:50%;
+    background:linear-gradient(135deg,var(--primary),var(--accent));
+    filter:blur(100px);opacity:.2;top:50%;left:50%;transform:translate(-50%,-50%);
+    animation:blobFloat 15s ease-in-out infinite alternate-reverse;z-index:-1;
+}
+@keyframes blobFloat{
+    0%{transform:translate(0,0) scale(1)}
+    50%{transform:translate(30px,-40px) scale(1.1)}
+    100%{transform:translate(-20px,30px) scale(.95)}
+}
+.auth-card{
+    width:100%;max-width:460px;background:var(--glass-bg);
+    backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));
+    border:1px solid var(--glass-border);border-radius:var(--radius-xl);
+    box-shadow:var(--glass-shadow);padding:44px 40px;animation:cardFadeIn .6s ease;
+}
+@keyframes cardFadeIn{
+    from{opacity:0;transform:translateY(20px) scale(.98)}
+    to{opacity:1;transform:translateY(0) scale(1)}
+}
+.auth-card-header{text-align:center;margin-bottom:32px}
+.auth-card-header h2{font-size:1.75rem;margin-bottom:8px}
+.auth-card-header p{color:var(--text-muted);font-size:.925rem}
+.auth-logo{
+    font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;
+    background:linear-gradient(135deg,var(--primary),var(--accent));
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+    background-clip:text;display:block;margin-bottom:8px;
+}
+.role-selector{display:flex;gap:4px;background:var(--bg);border-radius:var(--radius-sm);padding:4px;margin-bottom:24px}
+.role-tab{
+    flex:1;padding:10px;text-align:center;border-radius:6px;cursor:pointer;
+    font-size:.875rem;font-weight:600;color:var(--text-muted);
+    transition:all .25s ease;border:none;background:transparent;
+}
+.role-tab:hover{color:var(--text)}
+.role-tab.active{background:var(--primary);color:#fff;box-shadow:0 2px 8px rgba(108,99,255,0.3)}
+.role-tab input[type="radio"]{display:none}
+.password-strength{height:4px;border-radius:2px;margin-top:6px;background:var(--border);overflow:hidden}
+.password-strength-bar{height:100%;border-radius:2px;width:0;transition:width .3s ease,background .3s ease}
+.strength-weak{width:33%;background:var(--danger)}
+.strength-medium{width:66%;background:var(--warning)}
+.strength-strong{width:100%;background:var(--success)}
+.password-strength-text{font-size:.75rem;margin-top:4px;color:var(--text-muted)}
+.password-input-container{position:relative;display:flex;align-items:center}
+.password-toggle{
+    position:absolute;right:12px;top:50%;transform:translateY(-50%);
+    background:none;border:none;cursor:pointer;color:var(--text-muted);
+    padding:6px;display:flex;align-items:center;justify-content:center;
+    transition:color .2s ease;z-index:10;
+}
+.password-toggle:hover{color:var(--primary)}
+.password-toggle svg{width:20px;height:20px;stroke:currentColor}
+.password-input-container .form-input{padding-right:44px}
+.eye-icon,.eye-off-icon{width:20px;height:20px}
+
+.auth-footer{text-align:center;margin-top:24px;font-size:.9rem;color:var(--text-muted)}
+.auth-footer a{font-weight:600;color:var(--primary)}
+.auth-footer a:hover{text-decoration:underline}
+.auth-divider{display:flex;align-items:center;gap:16px;margin:20px 0;color:var(--text-muted);font-size:.8rem}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+@media(max-width:480px){.auth-card{padding:32px 24px;border-radius:var(--radius-lg)}}

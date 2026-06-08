@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Settings — Admin{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-role admin">🛡️ Admin</span>
+            <div class="sidebar-user">{{ session.user_name }}</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('admin.dashboard') }}" class="sidebar-link">📊 Dashboard</a>
+            <a href="{{ url_for('admin.manage_users') }}" class="sidebar-link">👥 Users Management</a>
+            <a href="{{ url_for('admin.manage_events') }}" class="sidebar-link">🎪 Events Management</a>
+            <a href="{{ url_for('tickets.admin_registrations') }}" class="sidebar-link">🎫 Registrations</a>
+            <a href="{{ url_for('admin.analytics') }}" class="sidebar-link">📈 Analytics</a>
+            <a href="{{ url_for('admin.settings') }}" class="sidebar-link active">⚙️ Settings</a>
+        </nav>
+    </aside>
+
+    <div class="dashboard-main">
+        <h1 class="mb-4">Platform Settings</h1>
+
+        <form method="POST" class="grid gap-4">
+
+            <!-- General Settings -->
+            <div class="card">
+                <h3 class="mb-3">General Information</h3>
+                <div class="grid grid-2 gap-3">
+                    <div class="form-group">
+                        <label class="form-label">Platform Name</label>
+                        <input type="text" name="platform_name" class="form-input" value="{{ settings.platform_name }}">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Support Email</label>
+                        <input type="email" name="support_email" class="form-input"
+                            value="{{ settings.support_email }}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tagline</label>
+                    <input type="text" name="tagline" class="form-input" value="{{ settings.tagline }}">
+                </div>
+            </div>
+
+            <!-- Operational Settings -->
+            <div class="card">
+                <h3 class="mb-3">Operations & Registration</h3>
+                <div class="form-group" style="max-width:300px">
+                    <label class="form-label">Max Tickets Per User (Per Event)</label>
+                    <input type="number" name="max_tickets_per_user" class="form-input"
+                        value="{{ settings.max_tickets_per_user }}" min="1">
+                </div>
+
+                <div style="margin-top:20px;display:flex;flex-direction:column;gap:12px">
+                    <label style="display:flex;align-items:center;gap:12px;cursor:pointer">
+                        <div class="switch">
+                            <input type="checkbox" name="allow_guest_browsing" value="1" {% if
+                                settings.allow_guest_browsing %}checked{% endif %}>
+                            <span class="slider round"></span>
+                        </div>
+                        <div>
+                            <strong>Allow Guest Browsing</strong>
+                            <div class="text-sm text-muted">Unregistered users can view the events catalog.</div>
+                        </div>
+                    </label>
+
+                    <label style="display:flex;align-items:center;gap:12px;cursor:pointer">
+                        <div class="switch">
+                            <input type="checkbox" name="maintenance_mode" value="1" {% if settings.maintenance_mode
+                                %}checked{% endif %}>
+                            <span class="slider round"></span>
+                        </div>
+                        <div>
+                            <strong class="text-danger">Maintenance Mode</strong>
+                            <div class="text-sm text-muted">Shows a "Down for Maintenance" page to non-admins.</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Email & Integrations Status (Read Only) -->
+            <div class="card">
+                <h3 class="mb-3">Integrations Status</h3>
+                <table class="dash-table">
+                    <tbody>
+                        <tr>
+                            <td width="200"><strong>SMTP Email</strong></td>
+                            <td>
+                                {% if config.MAIL_ENABLED %}
+                                <span class="badge badge-success">ENABLED</span>
+                                <div class="text-sm text-muted mt-1">{{ config.MAIL_SERVER }}:{{ config.MAIL_PORT }}
+                                </div>
+                                {% else %}
+                                <span class="badge badge-warning">DISABLED</span>
+                                <div class="text-sm text-muted mt-1">Configure in <code>config.py</code></div>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong> AI</strong></td>
+                            <td>
+                                <span class="badge badge-success">ACTIVE</span>
+                                <div class="text-sm text-muted mt-1">Local endpoints via <code>ai_helper.py</code></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Background Jobs</strong></td>
+                            <td>
+                                <span class="badge badge-success">RUNNING</span>
+                                <div class="text-sm text-muted mt-1">APScheduler initializing every hour</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div>
+                <button type="submit" class="btn btn-primary btn-lg">💾 Save Settings</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+{% endblock %}

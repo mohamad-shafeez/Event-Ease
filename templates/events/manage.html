@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% block title %}My Events — EventEase{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/events.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:32px;padding-bottom:60px">
+    <div class="manage-header">
+        <h1>My Events</h1>
+        <a href="{{ url_for('events.create') }}" class="btn btn-primary">➕ Create Event</a>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="manage-stats">
+        {% set total_events = events|length %}
+        {% set active = events|selectattr('status','equalto','published')|list|length %}
+        {% set total_reg = events|sum(attribute='registered') %}
+        <div class="stat-card">
+            <div class="stat-value">{{ total_events }}</div>
+            <div class="stat-label">Total Events</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ active }}</div>
+            <div class="stat-label">Published</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_reg }}</div>
+            <div class="stat-label">Registrations</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">₹{{ "%.0f"|format(events|sum(attribute='price')) }}</div>
+            <div class="stat-label">Total Revenue</div>
+        </div>
+    </div>
+
+    {% if events %}
+    <div style="overflow-x:auto">
+        <table class="events-table">
+            <thead>
+                <tr>
+                    <th>Event</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Capacity</th>
+                    <th>Registered</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in events %}
+                <tr>
+                    <td><strong>{{ e.title }}</strong></td>
+                    <td><span class="type-badge type-{{ e.type }}">{{ e.type|replace('_',' ')|title }}</span></td>
+                    <td>{{ e.date_start.strftime('%b %d, %Y') if e.date_start else '—' }}</td>
+                    <td>{{ e.capacity }}</td>
+                    <td>{{ e.registered }}</td>
+                    <td><span class="status-badge status-{{ e.status }}">{{ e.status }}</span></td>
+                    <td>
+                        <div class="table-actions">
+                            <a href="{{ url_for('events.detail', event_id=e.id) }}" class="btn btn-ghost btn-sm">View</a>
+                            <a href="{{ url_for('events.edit', event_id=e.id) }}" class="btn btn-ghost btn-sm">Edit</a>
+                            <a href="{{ url_for('tickets.creator_attendees', event_id=e.id) }}" class="btn btn-outline btn-sm">👥 Attendees</a>
+                            {% if e.status == 'draft' %}
+                            <form method="POST" action="{{ url_for('events.publish', event_id=e.id) }}">
+                                <button type="submit" class="btn btn-success btn-sm">Publish</button>
+                            </form>
+                            {% endif %}
+                            {% if e.status not in ('cancelled', 'ended') %}
+                            <form method="POST" action="{{ url_for('events.delete', event_id=e.id) }}" onsubmit="return confirm('Cancel this event?')">
+                                <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="events-empty card">
+        <h3>No events yet</h3>
+        <p class="text-muted">Create your first event and start building your audience!</p>
+        <a href="{{ url_for('events.create') }}" class="btn btn-primary mt-3">Create Your First Event</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+{% block footer %}{% endblock %}

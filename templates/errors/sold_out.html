@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Sold Out — EventEase{% endblock %}
+
+{% block content %}
+<div class="container text-center" style="max-width: 600px; padding: 100px 20px;">
+    <div style="font-size: 4rem; margin-bottom: 20px;">🚫</div>
+    <h1 class="mb-3">This Event is Sold Out</h1>
+    <p class="text-muted mb-4" style="font-size: 1.1rem;">
+        Sorry! <strong>{{ event.title }}</strong> has reached its maximum capacity.
+    </p>
+    
+    <div class="card mb-4" style="background: var(--bg-alt); text-align: left;">
+        <h3 class="mb-3">Join the Waitlist</h3>
+        <p class="text-sm text-muted mb-3">Leave your email below and we'll notify you immediately if a spot opens up or if the organizer adds more tickets.</p>
+        
+        <form action="{{ url_for('tickets.waitlist', event_id=event.id) }}" method="POST" style="display: flex; gap: 10px;">
+            <input type="email" name="email" class="form-input" placeholder="Your email address" required style="flex: 1;" value="{{ session.user_email }}">
+            <button type="submit" class="btn btn-primary">Join Waitlist</button>
+        </form>
+    </div>
+    
+    <a href="{{ url_for('events.browse') }}" class="btn btn-outline">← Browse Other Events</a>
+</div>
+{% endblock %}

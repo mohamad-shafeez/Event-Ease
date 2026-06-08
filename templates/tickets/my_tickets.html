@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% block title %}My Tickets — EventEase{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/tickets.css') }}">{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top:40px;padding-bottom:60px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+        <h1>My Tickets</h1>
+        <span class="badge badge-primary">{{ upcoming|length + past|length }} Total</span>
+    </div>
+
+    <div class="tickets-tabs tabs">
+        <div class="tab active" data-target="view-upcoming">Upcoming ({{ upcoming|length }})</div>
+        <div class="tab" data-target="view-past">Past &amp; Cancelled ({{ past|length }})</div>
+    </div>
+
+    <!-- Upcoming -->
+    <div id="view-upcoming" class="tickets-view">
+        {% if upcoming %}
+        <div class="tickets-grid">
+            {% for t in upcoming %}
+            <div class="mini-ticket">
+                <div class="mini-ticket-header">
+                    <span class="badge badge-success">CONFIRMED</span>
+                    <strong style="font-family:'Syne',sans-serif;font-size:.9rem">{{ t.ticket_code }}</strong>
+                </div>
+                <div class="mini-ticket-body">
+                    <span class="type-badge type-{{ t.event_type }} mb-1" style="display:inline-block;font-size:0.6rem">{{ t.event_type|replace('_',' ')|title }}</span>
+                    <h4>{{ t.event_title }}</h4>
+                    <div class="mini-ticket-meta">
+                        <span>📅 {{ t.date_start.strftime('%b %d, %Y') }}</span>
+                        <span>📍 {{ t.city or t.venue or 'Online' }}</span>
+                    </div>
+                </div>
+                <div class="mini-ticket-footer">
+                    <a href="{{ url_for('tickets.ticket_detail', ticket_code=t.ticket_code) }}" class="btn btn-outline btn-sm btn-block">View Ticket</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="card" style="text-align:center;padding:60px 20px">
+            <h3 class="mb-1">No Upcoming Events</h3>
+            <p class="text-muted mb-3">You haven't booked any upcoming events yet.</p>
+            <a href="{{ url_for('events.browse') }}" class="btn btn-primary">Browse Events</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Past -->
+    <div id="view-past" class="tickets-view" style="display:none">
+        {% if past %}
+        <div class="tickets-grid">
+            {% for t in past %}
+            <div class="mini-ticket" style="opacity:0.7">
+                <div class="mini-ticket-header">
+                    {% if t.status == 'cancelled' %}
+                    <span class="badge badge-danger">CANCELLED</span>
+                    {% else %}
+                    <span class="badge" style="background:var(--border);color:var(--text-muted)">PAST EVENT</span>
+                    {% endif %}
+                    <strong style="font-family:'Syne',sans-serif;font-size:.9rem">{{ t.ticket_code }}</strong>
+                </div>
+                <div class="mini-ticket-body">
+                    <h4>{{ t.event_title }}</h4>
+                    <div class="mini-ticket-meta">
+                        <span>📅 {{ t.date_start.strftime('%b %d, %Y') if t.date_start else '—' }}</span>
+                    </div>
+                </div>
+                <div class="mini-ticket-footer" style="display: flex; gap: 8px;">
+                    <a href="{{ url_for('tickets.ticket_detail', ticket_code=t.ticket_code) }}" class="btn btn-ghost btn-sm" style="flex: 1;">View Details</a>
+                    {% if t.status != 'cancelled' %}
+                    <button class="btn btn-outline btn-sm" style="flex: 1;" onclick="openReviewModal({{ t.event_id }}, '{{ t.event_title|escape }}')">Review</button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center text-muted mt-4">No past tickets found.</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Review Modal -->
+<div id="review-modal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+    <div class="modal-content glass-panel" style="width: 100%; max-width: 400px; padding: 2rem; border-radius: 16px; position: relative;">
+        <button class="close-modal" onclick="closeReviewModal()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem;"><i class="fas fa-times"></i></button>
+        <h3 style="margin-bottom: 0.5rem;">Rate Event</h3>
+        <p id="review-event-title" class="text-muted" style="margin-bottom: 1.5rem; font-size: 0.9rem;"></p>
+        
+        <form id="review-form" method="POST">
+            <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 1.5rem; font-size: 2rem; color: #4b5563; cursor: pointer;" id="star-rating">
+                <span data-value="1">★</span>
+                <span data-value="2">★</span>
+                <span data-value="3">★</span>
+                <span data-value="4">★</span>
+                <span data-value="5">★</span>
+            </div>
+            <input type="hidden" name="rating" id="rating-input" required>
+            
+            <div class="form-group">
+                <label class="form-label">Review (Optional)</label>
+                <textarea name="review_text" class="form-input" rows="3" placeholder="What did you think of the event?"></textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Review</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openReviewModal(eventId, title) {
+        document.getElementById('review-event-title').textContent = title;
+        document.getElementById('review-form').action = '/events/review/' + eventId;
+        document.getElementById('review-modal').style.display = 'flex';
+        
+        // Reset stars
+        document.getElementById('rating-input').value = '';
+        document.querySelectorAll('#star-rating span').forEach(s => s.style.color = '#4b5563');
+    }
+    
+    function closeReviewModal() {
+        document.getElementById('review-modal').style.display = 'none';
+    }
+    
+    document.querySelectorAll('#star-rating span').forEach(star => {
+        star.addEventListener('click', (e) => {
+            const rating = e.target.dataset.value;
+            document.getElementById('rating-input').value = rating;
+            
+            // Color stars
+            document.querySelectorAll('#star-rating span').forEach(s => {
+                if (s.dataset.value <= rating) {
+                    s.style.color = '#fbbf24';
+                } else {
+                    s.style.color = '#4b5563';
+                }
+            });
+        });
+        
+        star.addEventListener('mouseover', (e) => {
+            const rating = e.target.dataset.value;
+            if (!document.getElementById('rating-input').value) {
+                document.querySelectorAll('#star-rating span').forEach(s => {
+                    if (s.dataset.value <= rating) {
+                        s.style.color = '#fbbf24';
+                    } else {
+                        s.style.color = '#4b5563';
+                    }
+                });
+            }
+        });
+        
+        star.addEventListener('mouseout', () => {
+            const currentRating = document.getElementById('rating-input').value;
+            document.querySelectorAll('#star-rating span').forEach(s => {
+                if (currentRating && s.dataset.value <= currentRating) {
+                    s.style.color = '#fbbf24';
+                } else {
+                    s.style.color = '#4b5563';
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/tickets.js') }}"></script>{% endblock %}

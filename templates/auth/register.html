@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}Sign Up — EventEase{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-bg"></div>
+<div class="auth-blob-3"></div>
+
+<section class="auth-page">
+    <div class="auth-card">
+        <div class="auth-card-header">
+            <span class="auth-logo">EventEase</span>
+            <h2>Create Account</h2>
+            <p>Join EventEase and start your journey</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('auth.register') }}" id="register-form">
+            <!-- Role Selector -->
+            <div class="role-selector" id="role-selector">
+                <label class="role-tab active" id="role-tab-user">
+                    <input type="radio" name="role" value="user" checked>
+                    👤 Attendee
+                </label>
+                <label class="role-tab" id="role-tab-creator">
+                    <input type="radio" name="role" value="creator">
+                    🎨 Creator
+                </label>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="name">Full Name</label>
+                <input class="form-input" type="text" id="name" name="name" placeholder="Your full name" required autocomplete="name">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="reg-email">Email Address</label>
+                <input class="form-input" type="email" id="reg-email" name="email" placeholder="you@example.com" required autocomplete="email">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="reg-password">Password</label>
+                <div class="password-input-container">
+                    <input class="form-input" type="password" id="reg-password" name="password" placeholder="Min. 6 characters" required minlength="6" autocomplete="new-password">
+                    <button type="button" class="password-toggle" id="reg-password-toggle">
+                        <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <svg class="eye-off-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="password-strength">
+                    <div class="password-strength-bar" id="pw-strength-bar"></div>
+                </div>
+                <span class="password-strength-text" id="pw-strength-text"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="confirm-password">Confirm Password</label>
+                <div class="password-input-container">
+                    <input class="form-input" type="password" id="confirm-password" name="confirm_password" placeholder="Re-enter password" required autocomplete="new-password">
+                    <button type="button" class="password-toggle" id="confirm-password-toggle">
+                        <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <svg class="eye-off-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary auth-submit" id="register-submit">
+                Create Account
+            </button>
+        </form>
+
+        <div class="auth-divider">or</div>
+
+        <div class="auth-footer">
+            Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Role selector tabs
+document.querySelectorAll('.role-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+    });
+});
+
+// Password visibility toggle
+function setupPasswordToggle(toggleId, inputId) {
+    const toggleBtn = document.getElementById(toggleId);
+    const input = document.getElementById(inputId);
+    if (!toggleBtn || !input) return;
+
+    toggleBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const eyeIcon = toggleBtn.querySelector('.eye-icon');
+        const eyeOffIcon = toggleBtn.querySelector('.eye-off-icon');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            eyeIcon.style.display = 'none';
+            eyeOffIcon.style.display = 'block';
+        } else {
+            input.type = 'password';
+            eyeIcon.style.display = 'block';
+            eyeOffIcon.style.display = 'none';
+        }
+    });
+}
+
+setupPasswordToggle('reg-password-toggle', 'reg-password');
+setupPasswordToggle('confirm-password-toggle', 'confirm-password');
+
+// Password strength indicator
+const pwInput = document.getElementById('reg-password');
+const bar = document.getElementById('pw-strength-bar');
+const txt = document.getElementById('pw-strength-text');
+
+if (pwInput && bar) {
+    pwInput.addEventListener('input', () => {
+        const val = pwInput.value;
+        bar.className = 'password-strength-bar';
+        if (val.length === 0) { bar.style.width = '0'; txt.textContent = ''; return; }
+        let score = 0;
+        if (val.length >= 6) score++;
+        if (val.length >= 10) score++;
+        if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
+        if (/\d/.test(val)) score++;
+        if (/[^A-Za-z0-9]/.test(val)) score++;
+
+        if (score <= 2) { bar.classList.add('strength-weak'); txt.textContent = 'Weak'; }
+        else if (score <= 3) { bar.classList.add('strength-medium'); txt.textContent = 'Medium'; }
+        else { bar.classList.add('strength-strong'); txt.textContent = 'Strong'; }
+    });
+}
+</script>
+{% endblock %}
+
+{% block footer %}{% endblock %}

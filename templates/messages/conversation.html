@@ -1,0 +1,39 @@
+{% extends "messages/inbox.html" %}
+
+{% block thread %}
+<div class="chat-container" data-conv-id="{{ active_conv.id }}">
+    <!-- Chat Header -->
+    <div class="chat-header">
+        <a href="{{ url_for('messages.inbox') }}" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+        <div class="chat-avatar">
+            {% if other_user.avatar %}
+                <img src="{{ url_for('static', filename=other_user.avatar) }}" alt="{{ other_user.name }}">
+            {% else %}
+                <div class="avatar-placeholder">{{ other_user.name[0] | upper }}</div>
+            {% endif %}
+            <div class="online-indicator"></div>
+        </div>
+        <div class="chat-title">
+            <h3>{{ other_user.name }} <span class="role-badge">{{ other_user.role | title }}</span></h3>
+            {% if event %}
+            <a href="{{ url_for('events.detail', event_id=event.id) }}" class="event-link">Re: {{ event.title }}</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Messages Area -->
+    <div class="chat-messages" id="messagesArea">
+        {% include "messages/_message_list.html" %}
+    </div>
+
+    <!-- Input Area -->
+    <div class="chat-input-area">
+        <form id="messageForm" autocomplete="off">
+            <input type="text" id="messageInput" placeholder="Type a message..." maxlength="1000">
+            <button type="submit" id="sendBtn" class="btn btn-primary btn-icon" disabled>
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

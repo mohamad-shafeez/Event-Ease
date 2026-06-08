@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Ticket Confirmed — EventEase{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/tickets.css') }}">{% endblock %}
+
+{% block content %}
+<div class="confirmation-page">
+    <div class="success-check">✓</div>
+    <h1>You're In! 🎉</h1>
+    <p class="text-muted">Your booking is confirmed. See you at the event!</p>
+
+    <!-- Physical-looking Ticket Card -->
+    <div class="ticket-card">
+        <div class="ticket-stub">
+            <div class="icon">🎫</div>
+            <div class="code">{{ ticket.ticket_code }}</div>
+        </div>
+        
+        <div class="ticket-main">
+            <h2>{{ ticket.event_title }}</h2>
+            
+            <div class="ticket-info-grid">
+                <div class="ticket-info-box">
+                    <label>Date & Time</label>
+                    <strong>{{ ticket.date_start.strftime('%b %d, %Y • %I:%M %p') }}</strong>
+                </div>
+                <div class="ticket-info-box">
+                    <label>Venue</label>
+                    <strong>{{ ticket.venue or 'Online' }}</strong>
+                </div>
+                <div class="ticket-info-box">
+                    <label>Attendee</label>
+                    <strong>{{ ticket.user_name }}</strong>
+                </div>
+                <div class="ticket-info-box">
+                    <label>Status</label>
+                    <span class="badge badge-success">CONFIRMED</span>
+                </div>
+            </div>
+            
+            <div class="ticket-qr">
+                {% if ticket.qr_path %}
+                <img src="{{ url_for('static', filename=ticket.qr_path) }}" alt="Ticket QR Code">
+                {% else %}
+                <div style="width:120px;height:120px;background:#eee"></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+        <a href="{{ url_for('tickets.download_qr', ticket_code=ticket.ticket_code) }}" class="btn btn-outline">📥 Download QR</a>
+        <a href="{{ url_for('tickets.my_tickets') }}" class="btn btn-primary">🎫 View All Tickets</a>
+        <a href="https://wa.me/?text=I'm attending {{ ticket.event_title|urlencode }}! My ticket: {{ ticket.ticket_code }}" target="_blank" class="btn btn-ghost">💬 WhatsApp</a>
+    </div>
+</div>
+{% endblock %}

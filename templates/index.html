@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% block title %}EventEase — Discover & Host Amazing Events{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">{% endblock %}
+
+{% block content %}
+<!-- ── Hero Section ───────────────────────────── -->
+<section class="hero">
+    <div class="particles" id="particles-container"></div>
+    <div class="hero-content">
+        <h1>Unforgettable Experiences <span>Start Here</span></h1>
+        <p>Discover local events, buy secure QR tickets, or host your own experiences with our AI-powered event management platform.</p>
+        <div class="hero-buttons">
+            <a href="{{ url_for('events.browse') }}" class="btn btn-primary btn-lg" style="padding: 16px 32px;">🔍 Browse Events</a>
+            <a href="{{ url_for('events.create') if session.user_id else url_for('auth.register') }}" class="btn btn-outline btn-lg" style="padding: 16px 32px;">✨ Host an Event</a>
+        </div>
+    </div>
+</section>
+
+<!-- ── Live Stats Bar ─────────────────────────── -->
+<div class="live-stats" id="live-stats-bar">
+    <div class="stat-box">
+        <strong id="stat-events">--</strong>
+        <span>Live Events</span>
+    </div>
+    <div class="stat-box">
+        <strong id="stat-users">--</strong>
+        <span>Happy Users</span>
+    </div>
+    <div class="stat-box">
+        <strong id="stat-creators">--</strong>
+        <span>Creators</span>
+    </div>
+</div>
+
+<!-- ── How It Works ───────────────────────────── -->
+<section class="how-it-works">
+    <h2>How EventEase Works</h2>
+    <p class="text-muted">Your journey from discovery to attendance is just 3 clicks away.</p>
+    
+    <div class="steps-container">
+        <div class="step">
+            <div class="step-icon">👤</div>
+            <h3>1. Create Account</h3>
+            <p class="text-sm text-muted">Sign up as a User to attend, or as a Creator to host your own events.</p>
+        </div>
+        <div class="step">
+            <div class="step-icon">🎟️</div>
+            <h3>2. Discover & Book</h3>
+            <p class="text-sm text-muted">Use AI Smart Search to find the perfect event and check out securely.</p>
+        </div>
+        <div class="step">
+            <div class="step-icon">📱</div>
+            <h3>3. Get Your QR Ticket</h3>
+            <p class="text-sm text-muted">Receive an instant digital QR ticket. Just scan it at the venue!</p>
+        </div>
+    </div>
+</section>
+
+<!-- ── Categories ─────────────────────────────── -->
+<section class="categories">
+    <h2>Explore by Category</h2>
+    <p class="text-muted">Whatever you're into, we've got an event for it.</p>
+    
+    <div class="cat-grid" id="cat-grid">
+        <!-- These are hydrated by JS below so we can attach live counts -->
+    </div>
+</section>
+
+<!-- ── Trusted Creators ───────────────────────── -->
+<section class="trusted-creators">
+    <h2>Trusted by Top Creators</h2>
+    <p class="text-muted">Join the community of organizers hosting the city's best events.</p>
+    
+    <div class="creators-grid" id="creators-grid">
+        <!-- Loaded via JS to avoid complex DB logic in index route -->
+        <div class="text-muted" style="grid-column: 1/-1;">Loading top creators...</div>
+    </div>
+</section>
+{% endblock %}
+
+{% block footer %}
+<footer class="footer" style="background: var(--surface); padding: 60px 20px 20px; border-top: 1px solid var(--border);">
+    <div class="container" style="max-width: 1000px; margin: 0 auto;">
+        <div class="grid grid-3 gap-4" style="text-align: left; margin-bottom: 40px;">
+            <div>
+                <h3 style="font-family: 'Syne', sans-serif; font-size: 1.5rem; margin-bottom: 16px;">Event<span>Ease</span></h3>
+                <p class="text-sm text-muted">The intelligent platform connecting people through unforgettable real-world experiences.</p>
+            </div>
+            <div>
+                <h4 style="margin-bottom: 16px;">Quick Links</h4>
+                <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px;">
+                    <li><a href="{{ url_for('events.browse') }}" style="color: var(--text); text-decoration: none;">Browse Events</a></li>
+                    <li><a href="{{ url_for('auth.register') }}" style="color: var(--text); text-decoration: none;">Become a Creator</a></li>
+                    <li><a href="{{ url_for('auth.login') }}" style="color: var(--text); text-decoration: none;">Sign In</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="margin-bottom: 16px;">Contact</h4>
+                <ul style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px;">
+                    <li class="text-sm text-muted">support@eventease.com</li>
+                    <li class="text-sm text-muted">+91 800-EVENT-EASE</li>
+                </ul>
+            </div>
+        </div>
+        <div style="border-top: 1px solid var(--border); padding-top: 20px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+            &copy; <span id="current-year"></span> EventEase. All rights reserved.
+        </div>
+    </div>
+</footer>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Particle Generator
+    const container = document.getElementById('particles-container');
+    if (container) {
+        for (let i = 0; i < 20; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.width = Math.random() * 20 + 5 + 'px';
+            p.style.height = p.style.width;
+            p.style.animationDuration = Math.random() * 10 + 10 + 's';
+            p.style.animationDelay = Math.random() * 5 + 's';
+            container.appendChild(p);
+        }
+    }
+
+    // Set Copyright Year
+    document.getElementById('current-year').textContent = new Date().getFullYear();
+
+    // Fetch Live Stats for Bar & Categories & Creators
+    fetch('/admin/api/stats')
+        .then(r => r.json())
+        .then(data => {
+            // Update Bar
+            document.getElementById('stat-events').textContent = data.total_events || 0;
+            document.getElementById('stat-users').textContent = data.total_users || 0;
+            document.getElementById('stat-creators').textContent = data.total_creators || 0;
+        })
+        .catch(err => console.error(err));
+
+    // Hardcode category layout but we could fetch counts via api/chart/events_type if we wanted.
+    // For now, doing standard UI display.
+    const EVENT_TYPES = [
+        ['music_concert', 'Music Concert', '🎸'],
+        ['tech_conference', 'Tech Conference', '💻'],
+        ['art_exhibition', 'Art Exhibition', '🎨'],
+        ['food_festival', 'Food Festival', '🍔'],
+        ['business_seminar', 'Business Seminar', '💼'],
+        ['sports_match', 'Sports Match', '⚽'],
+        ['comedy_show', 'Comedy Show', '😂'],
+        ['theater_play', 'Theater Play', '🎭']
+    ];
+    
+    const catGrid = document.getElementById('cat-grid');
+    if (catGrid) {
+        EVENT_TYPES.forEach(t => {
+            catGrid.innerHTML += `
+                <a href="/events?type=${t[0]}" class="cat-card">
+                    <div class="cat-icon">${t[2]}</div>
+                    <h3>${t[1]}</h3>
+                    <div class="cat-count">View Events</div>
+                </a>
+            `;
+        });
+    }
+
+    // Since we don't have a public endpoint for top creators, we render placeholder cards, 
+    // but in a real scenario we would fetch from the DB.
+    const creatorsGrid = document.getElementById('creators-grid');
+    if (creatorsGrid) {
+        creatorsGrid.innerHTML = `
+            <div class="creator-card">
+                <div class="creator-avatar">J</div>
+                <h3>JD Entertainment</h3>
+                <div class="creator-stats">12 Events Hosted</div>
+            </div>
+            <div class="creator-card">
+                <div class="creator-avatar">S</div>
+                <h3>Sigma Tech</h3>
+                <div class="creator-stats">8 Events Hosted</div>
+            </div>
+            <div class="creator-card">
+                <div class="creator-avatar">V</div>
+                <h3>Vibe Check Events</h3>
+                <div class="creator-stats">15 Events Hosted</div>
+            </div>
+        `;
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Check-In: {{ event.title }} — EventEase{% endblock %}
+
+{% block styles %}
+<style>
+.checkin-layout {
+    display: flex;
+    gap: 2rem;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: calc(100vh - 80px);
+}
+.scanner-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+.log-panel {
+    flex: 1;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+}
+#qr-reader {
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(0,0,0,0.1);
+    border: 2px solid rgba(255,255,255,0.1);
+}
+#qr-reader__scan_region {
+    background: white;
+}
+.manual-entry {
+    margin-top: 1rem;
+    display: flex;
+    gap: 10px;
+}
+.log-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 1rem;
+}
+.log-item {
+    padding: 1rem;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid;
+}
+.log-item.success {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: var(--success);
+}
+.log-item.error {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--danger);
+}
+@media (max-width: 768px) {
+    .checkin-layout {
+        flex-direction: column;
+        padding: 1rem;
+    }
+    .log-panel {
+        max-width: 100%;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checkin-layout">
+    <div class="scanner-panel glass-panel" style="padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <div>
+                <h2 style="margin: 0;">Scanner</h2>
+                <p class="text-muted" style="margin: 0;">{{ event.title }}</p>
+            </div>
+            <a href="{{ url_for('tickets.creator_attendees', event_id=event.id) }}" class="btn btn-outline btn-sm">Done</a>
+        </div>
+        
+        <div id="qr-reader"></div>
+        
+        <div style="text-align: center; margin: 1rem 0; color: var(--text-muted);">OR</div>
+        
+        <form class="manual-entry" id="manualCheckinForm">
+            <input type="text" id="manualCode" class="form-input" placeholder="Enter Ticket Code" style="flex: 1;" required>
+            <button type="submit" class="btn btn-primary">Verify</button>
+        </form>
+    </div>
+    
+    <div class="log-panel glass-panel" style="padding: 1.5rem;">
+        <h3 style="margin-top: 0; margin-bottom: 1rem;">Recent Scans</h3>
+        <div class="log-list" id="logList">
+            {% for r in recent %}
+            <div class="log-item success">
+                <div>
+                    <strong style="display: block;">{{ r.name }}</strong>
+                    <span class="text-muted" style="font-size: 0.8rem;">{{ r.ticket_code }}</span>
+                </div>
+                <div class="text-muted" style="font-size: 0.75rem;">{{ r.checked_in_at.strftime('%H:%M') }}</div>
+            </div>
+            {% else %}
+            <p class="text-muted text-center" id="emptyLogText" style="margin-top: 2rem;">No check-ins yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- HTML5 QR Code Scanner -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const eventId = {{ event.id }};
+    const logList = document.getElementById('logList');
+    const emptyLogText = document.getElementById('emptyLogText');
+    const manualForm = document.getElementById('manualCheckinForm');
+    const manualInput = document.getElementById('manualCode');
+    
+    let isProcessing = false;
+    
+    function addLogEntry(type, title, subtitle, timeStr = null) {
+        if (emptyLogText) emptyLogText.style.display = 'none';
+        
+        const now = new Date();
+        const time = timeStr || `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        
+        const el = document.createElement('div');
+        el.className = `log-item ${type}`;
+        el.innerHTML = `
+            <div>
+                <strong style="display: block;">${title}</strong>
+                <span style="font-size: 0.8rem; opacity: 0.8;">${subtitle}</span>
+            </div>
+            <div style="font-size: 0.75rem; opacity: 0.6;">${time}</div>
+        `;
+        logList.insertBefore(el, logList.firstChild);
+        
+        // Remove old logs to keep it clean
+        if (logList.children.length > 20) {
+            logList.removeChild(logList.lastChild);
+        }
+    }
+    
+    async function processCode(code) {
+        if (isProcessing) return;
+        isProcessing = true;
+        
+        try {
+            const res = await fetch('/creator/api/checkin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticket_code: code, event_id: eventId })
+            });
+            const data = await res.json();
+            
+            if (res.ok && data.status === 'success') {
+                addLogEntry('success', data.attendee_name, `Code: ${code}`);
+                // Play success beep
+                const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'+Array(1e3).join('123')); // simplified beep
+                audio.play().catch(e=>{});
+            } else {
+                addLogEntry('error', 'Check-in Failed', data.msg || 'Invalid code');
+            }
+        } catch (err) {
+            addLogEntry('error', 'Network Error', 'Could not verify code');
+        } finally {
+            setTimeout(() => { isProcessing = false; }, 2000); // 2s cooldown to prevent double scans
+        }
+    }
+    
+    // Manual submission
+    manualForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const code = manualInput.value.trim().toUpperCase();
+        if (code) {
+            processCode(code);
+            manualInput.value = '';
+        }
+    });
+
+    // QR Scanner
+    const html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
+    html5QrcodeScanner.render((decodedText, decodedResult) => {
+        // success callback
+        processCode(decodedText);
+    }, (error) => {
+        // error callback, ignore normal frame errors
+    });
+});
+</script>
+{% endblock %}

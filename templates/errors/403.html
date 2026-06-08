@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}403 Forbidden — EventEase{% endblock %}
+{% block content %}
+<section style="min-height:70vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 24px">
+    <div>
+        <h1 style="font-size:5rem;margin-bottom:8px" class="text-accent">403</h1>
+        <h2>Access Denied</h2>
+        <p class="text-muted mt-2">You don't have permission to view this page.</p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">Go Home</a>
+    </div>
+</section>
+{% endblock %}

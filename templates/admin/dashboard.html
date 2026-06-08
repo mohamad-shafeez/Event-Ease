@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard — EventEase{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-role admin">🛡️ Admin</span>
+            <div class="sidebar-user">{{ session.user_name }}</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('admin.dashboard') }}" class="sidebar-link active">📊 Dashboard</a>
+            <a href="{{ url_for('admin.manage_users') }}" class="sidebar-link">👥 Users Management</a>
+            <a href="{{ url_for('admin.manage_events') }}" class="sidebar-link">🎪 Events Management</a>
+            <a href="{{ url_for('tickets.admin_registrations') }}" class="sidebar-link">🎫 Registrations</a>
+            <a href="{{ url_for('admin.analytics') }}" class="sidebar-link">📈 Analytics</a>
+            <a href="#" class="sidebar-link">⚙️ Platform Settings</a>
+        </nav>
+    </aside>
+
+    <!-- Main -->
+    <div class="dashboard-main">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+            <h1>Platform Overview</h1>
+            <span class="badge badge-success" id="live-indicator">🟢 Live Data</span>
+        </div>
+
+        <!-- Row 1: KPI Cards -->
+        <div class="kpi-grid mb-4">
+            <div class="kpi-card accent-primary">
+                <div class="kpi-label">Total Users</div>
+                <div class="kpi-value" id="kpi-users">{{ summary.total_users }}</div>
+                <div class="kpi-subtext">+{{ summary.new_users_this_week }} this week</div>
+            </div>
+            <div class="kpi-card accent-accent">
+                <div class="kpi-label">Total Creators</div>
+                <div class="kpi-value" id="kpi-creators">{{ summary.total_creators }}</div>
+            </div>
+            <div class="kpi-card accent-info">
+                <div class="kpi-label">Published Events</div>
+                <div class="kpi-value" id="kpi-events">{{ summary.total_events }}</div>
+            </div>
+            <div class="kpi-card accent-warning">
+                <div class="kpi-label">Total Registrations</div>
+                <div class="kpi-value" id="kpi-regs">{{ summary.total_registrations }}</div>
+            </div>
+            <div class="kpi-card accent-success">
+                <div class="kpi-label">Total Revenue</div>
+                <div class="kpi-value" id="kpi-rev">₹{{ "%.0f"|format(summary.total_revenue) }}</div>
+            </div>
+            <div class="kpi-card accent-danger">
+                <div class="kpi-label">Events Today</div>
+                <div class="kpi-value" id="kpi-today">{{ summary.events_today }}</div>
+            </div>
+        </div>
+
+        <!-- Row 2: Monthly Trends -->
+        <div class="grid grid-2 gap-3 mb-4">
+            <div class="chart-card">
+                <h3>Monthly Revenue ({{ current_year }})</h3>
+                <div class="chart-container"><canvas id="revChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Monthly Registrations</h3>
+                <div class="chart-container"><canvas id="regChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Row 3: Type Breakdown -->
+        <div class="grid grid-2 gap-3 mb-4">
+            <div class="chart-card">
+                <h3>Events by Type</h3>
+                <div class="chart-container"><canvas id="typeChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Revenue by Event Type</h3>
+                <div class="chart-container"><canvas id="revTypeChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Row 4: Top Tables -->
+        <div class="grid grid-2 gap-3 mb-4">
+            <div class="card p-0">
+                <div class="p-3 border-b"><h3>Top 5 Events</h3></div>
+                <div class="table-responsive">
+                    <table class="dash-table">
+                        <thead><tr><th>Event</th><th>Regs</th><th>Fill %</th><th>Revenue</th></tr></thead>
+                        <tbody>
+                            {% for e in top_events %}
+                            <tr>
+                                <td><strong>{{ e.title }}</strong></td>
+                                <td>{{ e.registrations }}</td>
+                                <td>{{ ((e.registrations / e.capacity * 100) if e.capacity > 0 else 0)|int }}%</td>
+                                <td class="text-success">₹{{ "%.0f"|format(e.revenue or 0) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card p-0">
+                <div class="p-3 border-b"><h3>Top 5 Creators</h3></div>
+                <div class="table-responsive">
+                    <table class="dash-table">
+                        <thead><tr><th>Creator</th><th>Events</th><th>Attendees</th><th>Revenue</th></tr></thead>
+                        <tbody>
+                            {% for c in top_creators %}
+                            <tr>
+                                <td><strong>{{ c.name }}</strong></td>
+                                <td>{{ c.events }}</td>
+                                <td>{{ c.attendees }}</td>
+                                <td class="text-primary">₹{{ "%.0f"|format(c.revenue or 0) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 5: Recent Activity -->
+        <div class="card mb-4">
+            <h3 class="mb-3">Recent Activity Feed</h3>
+            <div class="activity-feed">
+                {% for r in recent %}
+                <div class="activity-item">
+                    <div class="activity-dot"></div>
+                    <div class="activity-content">
+                        <strong>{{ r.user_name }}</strong> registered for <strong>{{ r.event_title }}</strong>
+                        <span class="activity-time">{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Load Chart.js from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Inject JSON Data for initial render (NO FETCH FOR INITIAL RENDER) -->
+<script>
+    window.CHART_DATA = {{ charts | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/dashboard_admin.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% for msg in messages %}
+    <div class="message-wrapper {% if msg.sender_id == current_user_id %}own-message{% else %}other-message{% endif %}" data-msg-id="{{ msg.id }}">
+        <div class="message-bubble">
+            {% if msg.message_text == 'This message was deleted' %}
+                <span class="deleted-text"><i>This message was deleted</i></span>
+            {% else %}
+                <span class="msg-text">{{ msg.message_text }}</span>
+                {% if msg.sender_id == current_user_id %}
+                <div class="msg-actions">
+                    <button class="delete-msg-btn" data-id="{{ msg.id }}" title="Delete message"><i class="fas fa-trash"></i></button>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
+        <div class="message-meta">
+            <span class="msg-time">{{ msg.sent_at.strftime('%H:%M') }}</span>
+            {% if msg.sender_id == current_user_id %}
+                <span class="read-receipt">
+                    {% if msg.is_read %}
+                        <i class="fas fa-check-double" style="color: var(--primary);"></i>
+                    {% else %}
+                        <i class="fas fa-check" style="color: var(--text-muted);"></i>
+                    {% endif %}
+                </span>
+            {% endif %}
+        </div>
+    </div>
+{% endfor %}

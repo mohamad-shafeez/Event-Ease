@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Manage Events — Admin{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-role admin">🛡️ Admin</span>
+            <div class="sidebar-user">{{ session.user_name }}</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('admin.dashboard') }}" class="sidebar-link">📊 Dashboard</a>
+            <a href="{{ url_for('admin.manage_users') }}" class="sidebar-link">👥 Users Management</a>
+            <a href="{{ url_for('admin.manage_events') }}" class="sidebar-link active">🎪 Events Management</a>
+            <a href="{{ url_for('tickets.admin_registrations') }}" class="sidebar-link">🎫 Registrations</a>
+            <a href="{{ url_for('admin.analytics') }}" class="sidebar-link">📈 Analytics</a>
+        </nav>
+    </aside>
+
+    <div class="dashboard-main">
+        <h1 class="mb-4">Events Management</h1>
+
+        <div class="card p-3 mb-4" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+            <div class="tabs" style="margin:0;border:none">
+                <a href="?status=all&search={{ search }}" class="tab {% if filter_status == 'all' %}active{% endif %}">All</a>
+                <a href="?status=published&search={{ search }}" class="tab {% if filter_status == 'published' %}active{% endif %}">Published</a>
+                <a href="?status=draft&search={{ search }}" class="tab {% if filter_status == 'draft' %}active{% endif %}">Draft</a>
+                <a href="?status=cancelled&search={{ search }}" class="tab {% if filter_status == 'cancelled' %}active{% endif %}">Cancelled</a>
+            </div>
+            
+            <form method="GET" style="display:flex;gap:8px">
+                <input type="hidden" name="status" value="{{ filter_status }}">
+                <input type="text" name="search" class="form-input" placeholder="Search event title..." value="{{ search }}">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
+
+        <div class="card p-0" style="overflow-x:auto">
+            <table class="dash-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Creator</th>
+                        <th>Date</th>
+                        <th>Capacity</th>
+                        <th>Regs</th>
+                        <th>Revenue</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in events %}
+                    <tr>
+                        <td>
+                            <div style="display:flex;align-items:center;gap:12px">
+                                {% if e.banner %}
+                                <img src="{{ url_for('static', filename=e.banner) }}" style="width:40px;height:40px;object-fit:cover;border-radius:4px" alt="">
+                                {% else %}
+                                <div style="width:40px;height:40px;background:var(--border);border-radius:4px"></div>
+                                {% endif %}
+                                <a href="{{ url_for('events.detail', event_id=e.id) }}" target="_blank" style="font-weight:600;color:var(--text);text-decoration:none">{{ e.title }}</a>
+                            </div>
+                        </td>
+                        <td>{{ e.type|replace('_',' ')|title }}</td>
+                        <td>{{ e.creator_name }}</td>
+                        <td>{{ e.date_start.strftime('%b %d, %Y') if e.date_start else '—' }}</td>
+                        <td>{{ e.capacity }}</td>
+                        <td>{{ e.registered }}</td>
+                        <td>₹{{ "%.0f"|format(e.revenue or 0) }}</td>
+                        <td>
+                            <span class="badge badge-{% if e.status=='published' %}success{% elif e.status=='cancelled' %}danger{% else %}info{% endif %}">{{ e.status|upper }}</span>
+                        </td>
+                        <td>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap">
+                                <a href="{{ url_for('events.detail', event_id=e.id) }}" target="_blank" class="btn btn-ghost btn-sm">View</a>
+                                
+                                {% if e.status not in ('cancelled', 'ended') %}
+                                <form action="{{ url_for('admin.force_cancel_event', event_id=e.id) }}" method="POST" onsubmit="return confirm('Force cancel this event? This cannot be undone.');">
+                                    <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+                                </form>
+                                {% endif %}
+                                <div class="ai-mod-badge" id="mod-badge-{{ e.id }}" style="display:none;margin-top:4px;width:100%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="9" class="text-center" style="padding: 60px 20px;">
+                        <div style="font-size:3rem;margin-bottom:12px;opacity:0.5">🎪</div>
+                        <h3 class="mb-2">No data yet</h3>
+                        <p class="text-muted text-sm">There are no events matching your current filters.</p>
+                    </td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

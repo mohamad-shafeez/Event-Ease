@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Ticket {{ ticket.ticket_code }} — EventEase{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/tickets.css') }}">{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:800px;padding-top:40px;padding-bottom:60px">
+    <div class="mb-3">
+        <a href="{{ url_for('tickets.my_tickets') }}" class="btn btn-ghost btn-sm">← Back to My Tickets</a>
+    </div>
+
+    <div class="card" style="padding:0;overflow:hidden">
+        <div style="background:linear-gradient(135deg,var(--primary),var(--accent));padding:24px;color:#fff;display:flex;justify-content:space-between;align-items:center">
+            <h2 style="color:#fff;margin:0">{{ ticket.event_title }}</h2>
+            <span class="badge {% if ticket.status=='confirmed' %}badge-success{% else %}badge-danger{% endif %}">{{ ticket.status|upper }}</span>
+        </div>
+        
+        <div style="padding:32px;display:flex;gap:32px;flex-wrap:wrap">
+            <div style="flex:1;min-width:260px">
+                <h3 class="mb-3" style="font-size:1.1rem;border-bottom:1px solid var(--border);padding-bottom:8px">Registration Details</h3>
+                <div class="grid grid-2 gap-2 mb-4">
+                    <div class="ticket-info-box"><label>Ticket Code</label><strong>{{ ticket.ticket_code }}</strong></div>
+                    <div class="ticket-info-box"><label>Attendee</label><strong>{{ ticket.user_name }}</strong></div>
+                    <div class="ticket-info-box"><label>Email</label><strong>{{ ticket.user_email }}</strong></div>
+                    <div class="ticket-info-box"><label>Amount Paid</label><strong>₹{{ "%.0f"|format(ticket.paid_amount) }}</strong></div>
+                    <div class="ticket-info-box"><label>Date & Time</label><strong>{{ ticket.date_start.strftime('%b %d, %Y • %I:%M %p') }}</strong></div>
+                    <div class="ticket-info-box"><label>Venue</label><strong>{{ ticket.venue or 'Online' }}</strong></div>
+                </div>
+
+                {% if ticket.answers %}
+                <h3 class="mb-2" style="font-size:1.1rem;border-bottom:1px solid var(--border);padding-bottom:8px">Custom Answers</h3>
+                <div class="grid grid-2 gap-2">
+                    {% for k, v in ticket.answers.items() %}
+                    <div class="ticket-info-box"><label>{{ k|replace('_',' ')|title }}</label><strong>{{ v }}</strong></div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <div style="width:200px;text-align:center;border-left:1px dashed var(--border);padding-left:32px;display:flex;flex-direction:column;justify-content:center">
+                {% if ticket.qr_path and ticket.status == 'confirmed' %}
+                <img src="{{ url_for('static', filename=ticket.qr_path) }}" alt="QR Code" style="width:100%;height:auto;border:1px solid var(--border);padding:8px;border-radius:var(--radius-sm);margin-bottom:16px">
+                <a href="{{ url_for('tickets.download_qr', ticket_code=ticket.ticket_code) }}" class="btn btn-primary btn-sm btn-block">Download PNG</a>
+                {% elif ticket.status == 'cancelled' %}
+                <div style="color:var(--danger);font-weight:700">TICKET CANCELLED</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

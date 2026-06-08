@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}Manage Users — Admin{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <!-- Re-use sidebar HTML (in production we'd use an include, but for this phase we duplicate for simplicity) -->
+        <div class="sidebar-header">
+            <span class="sidebar-role admin">🛡️ Admin</span>
+            <div class="sidebar-user">{{ session.user_name }}</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('admin.dashboard') }}" class="sidebar-link">📊 Dashboard</a>
+            <a href="{{ url_for('admin.manage_users') }}" class="sidebar-link active">👥 Users Management</a>
+            <a href="{{ url_for('admin.manage_events') }}" class="sidebar-link">🎪 Events Management</a>
+            <a href="{{ url_for('tickets.admin_registrations') }}" class="sidebar-link">🎫 Registrations</a>
+            <a href="{{ url_for('admin.analytics') }}" class="sidebar-link">📈 Analytics</a>
+        </nav>
+    </aside>
+
+    <div class="dashboard-main">
+        <h1 class="mb-4">Users Management</h1>
+
+        <!-- Filters & Search -->
+        <div class="card p-3 mb-4" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+            <div class="tabs" style="margin:0;border:none">
+                <a href="?role=all&search={{ search }}" class="tab {% if filter_role == 'all' %}active{% endif %}">All</a>
+                <a href="?role=users&search={{ search }}" class="tab {% if filter_role == 'users' %}active{% endif %}">Users</a>
+                <a href="?role=creators&search={{ search }}" class="tab {% if filter_role == 'creators' %}active{% endif %}">Creators</a>
+                <a href="?role=banned&search={{ search }}" class="tab {% if filter_role == 'banned' %}active{% endif %}">Banned</a>
+            </div>
+            
+            <form method="GET" style="display:flex;gap:8px">
+                <input type="hidden" name="role" value="{{ filter_role }}">
+                <input type="text" name="search" class="form-input" placeholder="Search name or email..." value="{{ search }}">
+                <button type="submit" class="btn btn-primary">Search</button>
+            </form>
+        </div>
+
+        <!-- Users Table -->
+        <div class="card p-0" style="overflow-x:auto">
+            <table class="dash-table">
+                <thead>
+                    <tr>
+                        <th>Avatar</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Joined</th>
+                        <th>Registrations</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td>
+                            <div class="organizer-avatar" style="width:36px;height:36px;font-size:1rem">{{ u.name[0]|upper }}</div>
+                        </td>
+                        <td><strong>{{ u.name }}</strong></td>
+                        <td>{{ u.email }}</td>
+                        <td>
+                            <span class="badge {% if u.role=='creator' %}badge-primary{% else %}badge-info{% endif %}">{{ u.role|upper }}</span>
+                        </td>
+                        <td>{{ u.created_at.strftime('%b %d, %Y') }}</td>
+                        <td>{{ u.total_regs }}</td>
+                        <td>
+                            {% if u.is_banned %}
+                            <span class="badge badge-danger">BANNED</span>
+                            {% else %}
+                            <span class="badge badge-success">ACTIVE</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form action="{{ url_for('admin.toggle_ban', user_id=u.id) }}" method="POST" style="display:inline" onsubmit="return confirm('Are you sure you want to {% if u.is_banned %}unban{% else %}ban{% endif %} this user?');">
+                                {% if u.is_banned %}
+                                <button type="submit" class="btn btn-success btn-sm">Unban</button>
+                                {% else %}
+                                <button type="submit" class="btn btn-danger btn-sm">Ban</button>
+                                {% endif %}
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-center" style="padding: 60px 20px;">
+                        <div style="font-size:3rem;margin-bottom:12px;opacity:0.5">👥</div>
+                        <h3 class="mb-2">No data yet</h3>
+                        <p class="text-muted text-sm">There are no users matching your current filters.</p>
+                    </td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div class="pagination mt-4">
+            {% for p in range(1, total_pages+1) %}
+            <a href="?page={{ p }}&role={{ filter_role }}&search={{ search }}" class="{% if page == p %}active{% endif %}">{{ p }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

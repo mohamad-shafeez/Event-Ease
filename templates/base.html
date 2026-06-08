@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="EventEase — Discover, create, and manage amazing events with QR tickets and AI-powered features.">
+    <title>{% block title %}EventEase{% endblock %}</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎟️</text></svg>">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/global.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ai.css') }}">
+    {% block styles %}{% endblock %}
+</head>
+
+<body>
+
+    <!-- ── Navbar ────────────────────────────── -->
+    <nav class="navbar" id="main-navbar">
+        <div class="navbar-inner">
+            <a href="{{ url_for('index') }}" class="navbar-brand">Event<span>Ease</span></a>
+
+            <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+
+            <div class="nav-links" id="nav-links">
+                <a href="{{ url_for('events.browse') }}"
+                    class="{% if request.endpoint == 'events.browse' %}active{% endif %}">Browse Events</a>
+                {% if current_user_id %}
+                {% if current_role == 'admin' %}
+                <a href="{{ url_for('admin.dashboard') }}"
+                    class="{% if request.endpoint == 'admin.dashboard' %}active{% endif %}">Dashboard</a>
+                {% elif current_role == 'creator' %}
+                <a href="{{ url_for('creator.dashboard') }}"
+                    class="{% if request.endpoint == 'creator.dashboard' %}active{% endif %}">Dashboard</a>
+                {% else %}
+                <a href="{{ url_for('user.dashboard') }}"
+                    class="{% if request.endpoint == 'user.dashboard' %}active{% endif %}">Dashboard</a>
+                {% endif %}
+                {% else %}
+                <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">Home</a>
+                {% endif %}
+            </div>
+
+            <div class="nav-actions" style="display: flex; align-items: center; gap: 15px;">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">🌙</button>
+                {% if current_user_id %}
+                
+                <a href="{{ url_for('messages.inbox') }}" class="nav-icon-link" style="position: relative; color: var(--text-light); text-decoration: none;" id="nav-messages">
+                    <i class="far fa-envelope" style="font-size: 1.2rem;"></i>
+                    <span class="badge" id="nav-msg-badge" style="display: none; position: absolute; top: -5px; right: -8px; background: var(--primary); font-size: 0.6rem; padding: 2px 5px; border-radius: 10px;">0</span>
+                </a>
+                
+                <div class="nav-icon-link dropdown" style="position: relative; color: var(--text-light); cursor: pointer;" id="nav-notifications">
+                    <i class="far fa-bell" style="font-size: 1.2rem;"></i>
+                    <span class="badge" id="nav-notif-badge" style="display: none; position: absolute; top: -5px; right: -5px; background: var(--danger); font-size: 0.6rem; padding: 2px 5px; border-radius: 10px;">0</span>
+                    
+                    <div class="dropdown-menu glass-panel" id="notif-dropdown" style="display: none; position: absolute; top: 150%; right: -50px; width: 300px; max-height: 400px; overflow-y: auto; padding: 1rem; border-radius: 12px; z-index: 1000; box-shadow: var(--shadow-lg);">
+                        <h4 style="margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;">Notifications</h4>
+                        <div id="notif-list" style="display: flex; flex-direction: column; gap: 10px;">
+                            <div class="text-muted text-center" style="font-size: 0.9rem;">No notifications</div>
+                        </div>
+                    </div>
+                </div>
+
+                <span class="badge badge-primary" style="font-size:.75rem; margin-left: 10px;">{{ current_role|upper }}</span>
+                <a href="{{ url_for('profile.edit') }}" class="btn btn-ghost btn-sm">Profile</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-ghost btn-sm">Logout</a>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-sm">Log In</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Sign Up</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── Flash Messages ────────────────────── -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container" id="flash-container">
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">
+            <span>{{ message }}</span>
+            <button class="flash-close" aria-label="Dismiss">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- ── Main Content ──────────────────────── -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ── Footer ────────────────────────────── -->
+    {% block footer %}
+    <footer class="footer">
+        <span class="footer-brand">EventEase</span>
+        <p>&copy; 2026 EventEase. </p>
+    </footer>
+    {% endblock %}
+
+    <!-- Scroll to Top Button -->
+    <button id="scroll-to-top" aria-label="Scroll to top"
+        style="display:none; position:fixed; bottom:30px; left:30px; z-index:9000; width:45px; height:45px; border-radius:50%; background:var(--primary); color:#fff; border:none; cursor:pointer; font-size:1.2rem; box-shadow:var(--shadow-md); transition:transform .3s;">
+        ↑
+    </button>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+
+    {% if session.user_id %}
+    <!-- ── AI Chat Panel ───────────────────────── -->
+    {% include 'partials/ai_chat_panel.html' %}
+    <script src="{{ url_for('static', filename='js/ai.js') }}"></script>
+    {% endif %}
+
+    <script>
+        // Scroll to Top Logic
+        const scrollTopBtn = document.getElementById('scroll-to-top');
+        if (scrollTopBtn) {
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 300) {
+                    scrollTopBtn.style.display = 'block';
+                } else {
+                    scrollTopBtn.style.display = 'none';
+                }
+            });
+            scrollTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    </script>
+</body>
+
+</html>

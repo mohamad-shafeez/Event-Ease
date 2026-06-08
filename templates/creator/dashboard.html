@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Creator Dashboard — EventEase{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-role creator">🎨 Creator</span>
+            <div class="sidebar-user">{{ session.user_name }}</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('creator.dashboard') }}" class="sidebar-link active">📊 Dashboard</a>
+            <a href="{{ url_for('events.create') }}" class="sidebar-link">➕ Create Event</a>
+            <a href="{{ url_for('events.manage') }}" class="sidebar-link">📋 My Events</a>
+            <a href="#analytics" class="sidebar-link">📈 Analytics</a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="dashboard-main">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+            <h1>Creator Overview</h1>
+        </div>
+
+        <!-- Row 1: KPI Cards -->
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px">
+            <div class="kpi-card accent-primary">
+                <div class="kpi-label">My Total Events</div>
+                <div class="kpi-value">{{ summary.total_events }}</div>
+            </div>
+            <div class="kpi-card accent-accent">
+                <div class="kpi-label">Total Attendees</div>
+                <div class="kpi-value">{{ summary.total_attendees }}</div>
+            </div>
+            <div class="kpi-card accent-success">
+                <div class="kpi-label">Total Revenue</div>
+                <div class="kpi-value">₹{{ "%.0f"|format(summary.total_revenue) }}</div>
+            </div>
+            <div class="kpi-card accent-warning">
+                <div class="kpi-label">Avg Fill Rate</div>
+                <div class="kpi-value">{{ "%.1f"|format(summary.avg_fill_rate) }}%</div>
+            </div>
+        </div>
+
+        <!-- Row 2: Charts -->
+        <div class="grid grid-2 gap-3 mb-4" id="analytics">
+            <div class="chart-card">
+                <h3>Revenue per Event</h3>
+                <div class="chart-container"><canvas id="creatorRevChart"></canvas></div>
+            </div>
+            <div class="chart-card">
+                <h3>Daily Registrations (30 Days)</h3>
+                <div class="chart-container"><canvas id="creatorRegChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Row 4: Two Panels (moved up for better layout flow) -->
+        <div class="grid grid-2 gap-3 mb-4">
+            <div class="card p-0" style="overflow:hidden">
+                <div class="p-3 border-b"><h3>Top Performing Event</h3></div>
+                {% if top_event %}
+                <div style="height:120px;background:url('{% if top_event.banner %}{{ url_for('static', filename=top_event.banner) }}{% else %}https://via.placeholder.com/600x120{% endif %}') center/cover"></div>
+                <div class="p-3">
+                    <h4>{{ top_event.title }}</h4>
+                    <p class="text-muted text-sm mb-3">{{ top_event.registered }} registered • ₹{{ "%.0f"|format(top_event.revenue or 0) }} generated</p>
+                    <a href="{{ url_for('tickets.creator_attendees', event_id=top_event.id) }}" class="btn btn-primary btn-sm">View Attendees</a>
+                </div>
+                {% else %}
+                <div class="p-4 text-center text-muted">No events yet.</div>
+                {% endif %}
+            </div>
+
+            <div class="card">
+                <h3>Quick Actions</h3>
+                <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px">
+                    <a href="{{ url_for('events.create') }}" class="btn btn-outline" style="text-align:left">➕ Create New Event</a>
+                    <a href="{{ url_for('events.manage') }}" class="btn btn-outline" style="text-align:left">📋 View All Events</a>
+                    <!-- Assuming CSV export logic exists on attendees page, we link to manage events to let them pick -->
+                    <a href="{{ url_for('events.manage') }}" class="btn btn-outline" style="text-align:left">📥 Export Attendees</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Performance Table -->
+        <div class="card p-0">
+            <div class="p-3 border-b"><h3>Events Performance</h3></div>
+            <div class="table-responsive">
+                <table class="dash-table">
+                    <thead><tr><th>Event</th><th>Capacity</th><th>Registered</th><th>Fill %</th><th>Revenue</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for e in performance %}
+                        {% set pct = ((e.registered / e.capacity * 100) if e.capacity > 0 else 0)|int %}
+                        {% set pcolor = 'success' if pct > 75 else ('warning' if pct > 40 else 'danger') %}
+                        <tr>
+                            <td><strong>{{ e.title }}</strong></td>
+                            <td>{{ e.capacity }}</td>
+                            <td>{{ e.registered }}</td>
+                            <td style="min-width:120px">
+                                <div style="display:flex;align-items:center;gap:8px">
+                                    <div class="progress-bar"><div class="progress-fill bg-{{ pcolor }}" style="width:{{ pct }}%" data-width="{{ pct }}"></div></div>
+                                    <span style="font-size:.8rem">{{ pct }}%</span>
+                                </div>
+                            </td>
+                            <td>₹{{ "%.0f"|format(e.revenue or 0) }}</td>
+                            <td><span class="badge badge-{% if e.status=='published' %}success{% elif e.status=='draft' %}info{% else %}danger{% endif %}">{{ e.status|upper }}</span></td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" class="text-center p-4 text-muted">No data available.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    window.CREATOR_CHART_DATA = {{ charts | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/dashboard_creator.js') }}"></script>
+{% endblock %}

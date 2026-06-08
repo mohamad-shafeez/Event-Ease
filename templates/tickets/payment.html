@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}Payment — EventEase{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/tickets.css') }}">{% endblock %}
+
+{% block content %}
+<div class="payment-layout">
+    <!-- Sidebar: Order Summary -->
+    <aside class="payment-sidebar">
+        <div class="order-summary">
+            <h3>Order Summary</h3>
+            <div class="order-line">
+                <span>{{ event.title }}</span>
+                <span>₹{{ "%.0f"|format(subtotal) }}</span>
+            </div>
+            <div class="order-line">
+                <span>Platform Fee</span>
+                <span>₹{{ "%.0f"|format(fee) }}</span>
+            </div>
+            <div class="order-total">
+                <span>Total Amount</span>
+                <span>₹{{ "%.0f"|format(total) }}</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main: Payment Method -->
+    <main class="payment-main">
+        <h2>Payment Details</h2>
+        <p class="text-muted mb-4">Complete your payment to secure your ticket.</p>
+        
+        <div class="demo-notice">
+            ℹ️ This is a simulated demo environment. No real charges will be made.
+        </div>
+
+        <div class="payment-methods">
+            {% if total == 0 %}
+                <div class="pay-tab active" data-target="panel-free" data-method="free">Free Ticket</div>
+            {% else %}
+                <div class="pay-tab active" data-target="panel-upi" data-method="upi">UPI</div>
+                <div class="pay-tab" data-target="panel-card" data-method="card">Card</div>
+                <div class="pay-tab" data-target="panel-net" data-method="netbanking">Net Banking</div>
+            {% endif %}
+        </div>
+
+        <form method="POST" action="{{ url_for('tickets.payment', reg_id=reg.id) }}" id="payment-form">
+            <input type="hidden" name="payment_method" id="payment-method-input" value="{% if total == 0 %}free{% else %}upi{% endif %}">
+
+            {% if total == 0 %}
+            <div class="pay-panel active" id="panel-free">
+                <p>This event is free. No payment is required.</p>
+            </div>
+            {% else %}
+            <!-- UPI Panel -->
+            <div class="pay-panel active" id="panel-upi">
+                <div class="form-group">
+                    <label class="form-label" for="upi_id">Virtual Payment Address (UPI ID)</label>
+                    <input class="form-input" type="text" id="upi_id" placeholder="e.g. yourname@upi" value="demo@ybl">
+                </div>
+            </div>
+
+            <!-- Card Panel -->
+            <div class="pay-panel" id="panel-card">
+                <div class="form-group">
+                    <label class="form-label" for="card_number">Card Number</label>
+                    <input class="form-input" type="text" id="card_number" placeholder="0000 0000 0000 0000" maxlength="19">
+                </div>
+                <div class="grid grid-2 gap-2">
+                    <div class="form-group">
+                        <label class="form-label" for="card_expiry">Valid Through</label>
+                        <input class="form-input" type="text" id="card_expiry" placeholder="MM/YY" maxlength="5">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="card_cvv">CVV</label>
+                        <input class="form-input" type="password" id="card_cvv" placeholder="•••" maxlength="4">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="card_name">Name on Card</label>
+                    <input class="form-input" type="text" id="card_name" placeholder="John Doe">
+                </div>
+            </div>
+
+            <!-- Net Banking Panel -->
+            <div class="pay-panel" id="panel-net">
+                <div class="form-group">
+                    <label class="form-label" for="bank">Select Bank</label>
+                    <select class="form-input" id="bank">
+                        <option>State Bank of India</option>
+                        <option>HDFC Bank</option>
+                        <option>ICICI Bank</option>
+                        <option>Axis Bank</option>
+                    </select>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary btn-lg btn-block" id="pay-btn">
+                    {% if total == 0 %}Confirm Registration{% else %}Pay ₹{{ "%.0f"|format(total) }}{% endif %}
+                </button>
+            </div>
+        </form>
+    </main>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/tickets.js') }}"></script>{% endblock %}

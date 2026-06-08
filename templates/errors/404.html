@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}404 Not Found — EventEase{% endblock %}
+{% block content %}
+<section style="min-height:70vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 24px">
+    <div>
+        <h1 style="font-size:5rem;margin-bottom:8px" class="text-primary">404</h1>
+        <h2>Page Not Found</h2>
+        <p class="text-muted mt-2">The page you're looking for doesn't exist or has been moved.</p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">Go Home</a>
+    </div>
+</section>
+{% endblock %}

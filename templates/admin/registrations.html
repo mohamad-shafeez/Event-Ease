@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Platform Registrations — Admin{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <span class="sidebar-role admin">🛡️ Admin</span>
+            <div class="sidebar-user">{{ session.user_name }}</div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('admin.dashboard') }}" class="sidebar-link">📊 Dashboard</a>
+            <a href="{{ url_for('admin.manage_users') }}" class="sidebar-link">👥 Users Management</a>
+            <a href="{{ url_for('admin.manage_events') }}" class="sidebar-link">🎪 Events Management</a>
+            <a href="{{ url_for('tickets.admin_registrations') }}" class="sidebar-link active">🎫 Registrations</a>
+            <a href="{{ url_for('admin.analytics') }}" class="sidebar-link">📈 Analytics</a>
+        </nav>
+    </aside>
+
+    <div class="dashboard-main">
+        <h1 class="mb-4">Platform Registrations</h1>
+
+        <!-- Filters & Search -->
+        <div style="display:grid;gap:16px;margin-bottom:24px">
+            <!-- Status Filter Box -->
+            <div class="card p-4">
+                <div style="font-size:0.875rem;font-weight:600;color:#9CA3AF;margin-bottom:12px;text-transform:uppercase">Filter by Status</div>
+                <div class="tabs" style="margin:0;border:none;display:flex;gap:12px;flex-wrap:wrap">
+                    <a href="?status=all&search={{ search }}" class="tab {% if filter_status == 'all' %}active{% endif %}" style="padding:8px 16px">All</a>
+                    <a href="?status=confirmed&search={{ search }}" class="tab {% if filter_status == 'confirmed' %}active{% endif %}" style="padding:8px 16px">Confirmed</a>
+                    <a href="?status=pending&search={{ search }}" class="tab {% if filter_status == 'pending' %}active{% endif %}" style="padding:8px 16px">Pending</a>
+                    <a href="?status=cancelled&search={{ search }}" class="tab {% if filter_status == 'cancelled' %}active{% endif %}" style="padding:8px 16px">Cancelled</a>
+                </div>
+            </div>
+
+            <!-- Search Box -->
+            <div class="card p-4">
+                <div style="font-size:0.875rem;font-weight:600;color:#9CA3AF;margin-bottom:12px;text-transform:uppercase">Search Registrations</div>
+                <form method="GET" style="display:flex;gap:12px">
+                    <input type="hidden" name="status" value="{{ filter_status }}">
+                    <input type="text" name="search" class="form-input" placeholder="Search by ticket code or user name..." value="{{ search }}" style="flex:1">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Registrations Table -->
+        <div class="card p-0" style="overflow-x:auto">
+            <table class="dash-table" style="width:100%">
+                <thead>
+                    <tr>
+                        <th style="min-width:150px">Ticket Code</th>
+                        <th style="min-width:180px">Event</th>
+                        <th style="min-width:150px">User</th>
+                        <th style="min-width:150px">Date</th>
+                        <th style="min-width:120px">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in registrations %}
+                    <tr>
+                        <td style="font-family:'Syne',sans-serif;font-weight:700;padding:12px 16px">{{ r.ticket_code }}</td>
+                        <td style="padding:12px 16px">{{ r.event_title }}</td>
+                        <td style="padding:12px 16px">{{ r.user_name }}</td>
+                        <td style="padding:12px 16px">{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td style="padding:12px 16px">
+                            <span class="badge {% if r.status=='confirmed' %}badge-success{% elif r.status=='pending' %}badge-warning{% else %}badge-danger{% endif %}">{{ r.status|upper }}</span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center" style="padding: 60px 20px;">
+                            <div style="font-size:3rem;margin-bottom:12px;opacity:0.5">🎫</div>
+                            <h3 class="mb-2">No registrations found</h3>
+                            <p class="text-muted text-sm">Try adjusting your filters or search criteria.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div class="pagination mt-4">
+            {% for p in range(1, total_pages+1) %}
+            <a href="?page={{ p }}&status={{ filter_status }}&search={{ search }}" class="{% if page == p %}active{% endif %}">{{ p }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
