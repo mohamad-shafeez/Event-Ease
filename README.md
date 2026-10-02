@@ -156,3 +156,5 @@ On initial startup, EventEase automatically seeds a default administrator accoun
 *   **Email:** `admin@eventease.com`
 *   **Password:** `Admin@123`
 *(Banned users, configuration updates, and dashboard statistics can be managed using this account).*
+
+   
